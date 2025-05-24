@@ -1,0 +1,122 @@
+{% manifest %} 
+    { 
+    "type": "Functional", 
+    "displayName": "Custom Create Form", 
+    "description": "This component displays a custom create form", 
+    "tables": ["docs_sessions"], 
+    "params": [ 
+        { 
+        "id": "title", 
+        "displayName": "Title", 
+        "description": "Heading for this component" 
+        }, 
+        { 
+        "id": "description", 
+        "displayName": "description", 
+        "description": "Description of the page" 
+        }] 
+    } 
+{% endmanifest %}
+
+{% include 'customformstyle' %}
+
+<div class="row sectionBlockLayout text-left" style="display: flex; flex-wrap: wrap; margin: 0px; min-height: auto; padding: 8px;">
+    <div class="container" style="display: flex; flex-wrap: wrap;">
+      <div class="col-md-12 columnBlockLayout" style="flex-grow: 1; display: flex; flex-direction: column; min-width: 310px; word-break: break-word; padding: 5px; margin: 5px 0px;">
+        <h1 style="text-align: center;">{{title}}</h1>
+        </div>
+        <div><p style="text-align: center;">{{description}}</p></div>
+    </div>
+  </div>
+  <div class="row sectionBlockLayout" style="display: flex; flex-wrap: wrap; padding: 8px; margin: 0px; min-height: 15px;"></div>
+  <div class="row sectionBlockLayout text-left" style="display: flex; flex-wrap: wrap; margin: 0px; min-height: auto; padding: 8px;">
+    <div class="container" style="padding: 0px; display: flex; flex-wrap: wrap;">
+      <div class="col-md-12 columnBlockLayout" style="flex-grow: 1; display: flex; flex-direction: column; min-width: 310px; word-break: break-word; margin: 5px 0px; padding: 5px;">
+        <!--include PortalWebAPI helder for WebAPI-->
+        {% include 'portalhelper' %}
+
+        <form id="myForm">
+            <label for="docs_sessionname">Session Name:</label>
+            <input type="text" id="docs_sessionname" name="docs_sessionname" required><br>
+          
+            <label for="docs_sessiondescription">Session Description:</label>
+            <textarea id="docs_sessiondescription" name="docs_sessiondescription" required></textarea><br>
+          
+            <label for="docs_sessiondateandtime">Session Date and Time:</label>
+            <input type="datetime-local" id="docs_sessiondateandtime" name="docs_sessiondateandtime" required><br>
+          
+            <label for="docs_duration">Duration (minutes):</label>
+            <input type="number" id="docs_duration" name="docs_duration" required><br>
+          
+            <input type="submit" value="Submit">
+          </form>
+      
+
+
+    </div>
+    </div>
+  </div>
+
+<script>
+
+$(document).ready(function() {
+    $('#myForm').submit(function(event) {
+        
+
+        event.preventDefault(); // Prevent the default form submission
+
+        // Create a new record object from form data
+        var record = {};
+        record.docs_sessionname = $('#docs_sessionname').val(); // Text
+        record.docs_sessiondescription = $('#docs_sessiondescription').val(); // Multiline Text
+        record.docs_sessiondateandtime = $('#docs_sessiondateandtime').val(); // Date Time
+        record.docs_duration = parseInt($('#docs_duration').val()); // Whole Number
+  
+
+        // Call the WebAPI helper function to create the record
+        webapi.safeAjax({
+            type: "POST",
+            contentType: "application/json",
+            url: "/_api/docs_sessions",
+            data: JSON.stringify(record),
+            success: function (data, textStatus, xhr) {
+                var newId = xhr.getResponseHeader("entityid");
+                console.log(newId);
+                // Reset the form after successful submission
+                $('#myForm')[0].reset();
+                just_added(newId);
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                console.log(xhr);
+            }
+        });
+    });
+
+    //Read example
+    function just_added(id) {
+
+        webapi.safeAjax({
+            type: "GET",
+            url: "/_api/docs_sessions("+id+")?$select=docs_sessionname",
+            contentType: "application/json",
+            headers: {
+                "Prefer": "odata.include-annotations=*"
+            },
+            success: function (data, textStatus, xhr) {
+                var result = data;
+                console.log(result);
+                // Columns
+                var docs_sessionid = result["docs_sessionid"]; // Guid
+                var docs_sessionname = result["docs_sessionname"]; // Text
+                alert("You just added a session called: " + docs_sessionname);
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                console.log(xhr);
+            }
+        });
+
+    }
+
+});  
+
+</script>
